@@ -1,2 +1,68 @@
 Def Server(ServerIp,ServerPort) :
-    skt = socket.udp();
+    //CREO SOCKET TCP
+    master = socket.TCP();
+    master.bind(ServerIp,ServerPort);
+    server = master.Listen();
+    sktUDP = socket.UDP();
+    sktUDP.bind(127.0.0.1,65535);
+    Thread.new(transmitirStream,sktUDP);
+    while (true)
+            client,err = server.accept();
+            if (err):
+                break;
+            Thread.new(clientConection,client);
+    endWhile
+    master.close();
+EndDef
+
+
+//HAGO QUE UDP ESTE CONSTANTEMENTE ESCUCHANDO Y TRANSMITIENDO AL BROADCAST
+Def transmitirStream(sktUDP):
+    while(true):
+        datagram, ip, port = sktUDP.receive()
+        if (data != nil):
+            sktUDP.sendTo(127.0.0.255,65400)
+    endWhile
+    sktUDP.close();
+endDef
+
+//OBTENEMOS PUERTO PARA PASAR DATAGRAMAS AL CLIENTE POR UDP
+Def clientConection(client):
+    sktUDP = socket.UDP();
+    sktUDP.bind(*,65400);
+
+    bool conectar;
+    bool interrumpir;
+    bool desconectar;
+    bool continuar;
+
+    while (true):
+        data,err = client.receive()    
+        if (err):
+            client.close();
+        repeat until (data != nil)
+
+        if (data.find("CONECTAR")):
+            initPos = String.pos(data,"CONECTAR")+1;
+            endPos = String.pos(data, "\n")
+            clientPort = String.cut(data,initPos,endPos)
+            clientIp = client.getIp()
+            Thread.new(sendData,SktUDP,clientPort,clientIp)
+
+        if (data.find("DESCONECTAR")):
+            sktUDP.close();
+            client.close();
+
+        if data.find("INTERRUMPIR"):
+    
+            
+        if data.find("CONTINUAR"):
+
+
+
+Def sendData(sktUDP,clientPort,clientIp):
+    while (true):
+        datagram,ip,port = sktUDP.receive();
+        if (datagram != nil):
+            sktUDP.sendTo(datagram,clientIp,clientPort);
+    endWhile
