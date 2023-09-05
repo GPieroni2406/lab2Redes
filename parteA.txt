@@ -1,0 +1,2 @@
+Def Server(ServerIp,ServerPort) :
+    skt = socket.udp();
