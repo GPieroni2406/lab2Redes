@@ -125,7 +125,24 @@ Def Client(serverIP,serverPort,vlcPort):
         if (data.find("DESCONECTAR")):
             sktUDP.close();
             break;
-        endif
+	
+	endif
+
+	buff1 = data;
+       	remain, err = client.send(buff1)
+	While remain != NIL:
+	remain, err = client.send(remain)
+	
+	if data.find("DESCONECTAR") || data.find("CONECTAR") || data.find("INTERRUMPIR") || data.find("CONTINUAR"):
+		data, err = client.receive();
+		buff2 = data;
+		while data != 'NIL':
+		data, err = client.receive();
+		buff2 += data;
+		endWhile
+		if !data.find("OK") Break;
+ 	endif
+        
     endWhile
 endDef
 
