@@ -1,5 +1,5 @@
 Def Server(ServerIp,ServerPort) :
-    //CREO LISTA DE CLEINTES
+    //CREO LISTA DE CLIENTES
     clientsList = [(clientIp,clientPort,clientReady)]
 
     //CREO SOCKET TCP
@@ -119,7 +119,7 @@ Def Client(serverIP,serverPort,vlcPort):
             endPos = String.pos(data, "\n");
             clientPort = String.cut(data,initPos,endPos);
             sktUDP.bind(localhost,clientPort);
-            Thread(sktUDP,sktVLC,clientList);
+            Thread.new(transmissionVLC, sktUDP,sktVLC);
         endif
 
         if (data.find("DESCONECTAR")):
