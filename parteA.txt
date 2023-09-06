@@ -1,16 +1,16 @@
 Def Server(ServerIp,ServerPort) :
-    //CREO LISTA DE CLIENTES
+
     clientsList = [(clientIp,clientPort,clientReady)]
 
-    //CREO SOCKET TCP
+
     master = socket.TCP();
     master.bind(ServerIp,ServerPort);
     server = master.Listen();
-    server.settimeout(0); //NO BLOQUEANTE
+    server.settimeout(0); 
 
-    //CREO SOCKET UDP
+   
     sktUDP = socket.UDP();
-    sktUDP.bind(127.0.0.1,65535);
+    sktUDP.bind(localhost,65535);
 
 
     while (true)
@@ -40,19 +40,19 @@ Def clientConection(client,clientList):
             buffer,err = client.receive();
             if (err):
                 client.close();
-            data += buffer
+            data += buffer;
         until (buffer == "")    
 
         if (data.find("CONECTAR")):
             initPos = String.pos(data,"CONECTAR")+1;
             endPos = String.pos(data, "\n");
-            clientPort = String.cut(data,initPos,endPos);
-            if (!clientsList.find(clientIp,_,_)): //SI EL IP YA ESTA EN LA LISTA NO LO AGREGO
+            clientPort = String.sub(data,initPos,endPos);
+            if (!clientsList.find(clientIp,_,_)): 
                 clientList.add((clientIp,clientsPort,true));
             endIf
         endif
 
-        if (data.find("DESCONECTAR")): //LO SACO DE LA LISTA Y CORTO LA CONEXION TCP
+        if (data.find("DESCONECTAR")): 
             if (clientsList.find(clientIp,_,_)):
                 clientList.remove((clientIp,_,_));
             endIf
@@ -95,11 +95,11 @@ endDef;
 Def Client(serverIP,serverPort,vlcPort):
     buff = "";
 
-    //SOCKET TCP
+ 
     master = socket.TCP();
     master.bind(localhost,0);
 
-    //SOCKET UDP
+    
     sktUDP = socket.UDP()
 
 
