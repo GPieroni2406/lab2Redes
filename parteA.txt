@@ -92,4 +92,40 @@ endDef;
 
 
 
+Def Client(serverIP,serverPort,vlcPort):
+    //SOCKET TCP
+    master = socket.TCP();
+    master.bind(localhost,0);
+
+    //SOCKET UDP
+    sktUDP = socket.UDP()
+
+    client, err = master.connect(serverIP, serverPort);
+    if (err):
+        master.close();
+        break;
+    endIf
+
+    while (true):
+        data = IO.readLn();
+        if (data.find("CONECTAR")):
+            initPos = String.pos(data,"CONECTAR")+1;
+            endPos = String.pos(data, "\n");
+            clientPort = String.cut(data,initPos,endPos);
+            sktUDP.bind(localhost,clientPort);
+        endif
+        repeat
+            remain,err = client.send(data)
+            if (err):
+                break;
+                client.close();
+            endIf
+            data = remain
+        until (data = "")
+        if (data.find("DESCONECTAR")):
+            sktUDP.close();
+            break;
+        endif
+    endWhile
+endDef
 
