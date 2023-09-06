@@ -1,68 +1,95 @@
 Def Server(ServerIp,ServerPort) :
+    //CREO LISTA DE CLEINTES
+    clientsList = [(clientIp,clientPort,clientReady)]
+
     //CREO SOCKET TCP
     master = socket.TCP();
     master.bind(ServerIp,ServerPort);
     server = master.Listen();
+    server.settimeout(0); //NO BLOQUEANTE
+
+    //CREO SOCKET UDP
     sktUDP = socket.UDP();
     sktUDP.bind(127.0.0.1,65535);
-    Thread.new(transmitirStream,sktUDP);
+
+
     while (true)
             client,err = server.accept();
-            if (err):
-                break;
-            Thread.new(clientConection,client);
+            if (err != "timeout"):
+                Thread.new(clientConection,client,clientsList);
+            endIf
+
+            datagram,ip,port = sktUDP.receive();
+            if (datagram != nil):
+                for c in clientsList:
+                    if (c.getReady())
+                        sktUDP.sendTo(datagram,c.clientIp,c.clientPort);
+                    endIf
+                endFor
+            endIf
     endWhile
     master.close();
 EndDef
 
 
-//HAGO QUE UDP ESTE CONSTANTEMENTE ESCUCHANDO Y TRANSMITIENDO AL BROADCAST
-Def transmitirStream(sktUDP):
-    while(true):
-        datagram, ip, port = sktUDP.receive()
-        if (data != nil):
-            sktUDP.sendTo(127.0.0.255,65400)
-    endWhile
-    sktUDP.close();
-endDef
-
-//OBTENEMOS PUERTO PARA PASAR DATAGRAMAS AL CLIENTE POR UDP
-Def clientConection(client):
-    sktUDP = socket.UDP();
-    sktUDP.bind(*,65400);
-
-    bool conectar;
-    bool interrumpir;
-    bool desconectar;
-    bool continuar;
-
+Def clientConection(client,clientList):
+    clientIp,_ = client.getPeer();
     while (true):
-        data,err = client.receive()    
-        if (err):
-            client.close();
-        repeat until (data != nil)
+    data = "";
+        repeat
+            buffer,err = client.receive();
+            if (err):
+                client.close();
+            data += buffer
+        until (buffer == "")    
 
         if (data.find("CONECTAR")):
             initPos = String.pos(data,"CONECTAR")+1;
-            endPos = String.pos(data, "\n")
-            clientPort = String.cut(data,initPos,endPos)
-            clientIp = client.getIp()
-            Thread.new(sendData,SktUDP,clientPort,clientIp)
+            endPos = String.pos(data, "\n");
+            clientPort = String.cut(data,initPos,endPos);
+            if (!clientsList.find(clientIp,_,_)): //SI EL IP YA ESTA EN LA LISTA NO LO AGREGO
+                clientList.add((clientIp,clientsPort,true));
+            endIf
+        endif
 
-        if (data.find("DESCONECTAR")):
-            sktUDP.close();
+        if (data.find("DESCONECTAR")): //LO SACO DE LA LISTA Y CORTO LA CONEXION TCP
+            if (clientsList.find(clientIp,_,_)):
+                clientList.remove((clientIp,_,_));
+            endIf
+
+            message = "OK\n"
+            repeat
+                remain, err = client.send(message);
+                message = remain;
+            until (message = "")
+
             client.close();
+            break;
+        endIf    
 
-        if data.find("INTERRUMPIR"):
-    
-            
-        if data.find("CONTINUAR"):
+        if data.find("INTERRUMPIR"): //LO PONGO EN FALSE EN LA LISTA PARA QUE NO TRANSMITA
+            if (clientsList.find(clientIp,_,_)):
+               clientList.modify((clientIp,_,false));
+            endIf
+        endIf
 
+        if data.find("CONTINUAR"): //LO PONGO EN TRUE EN LA LISTA PARA QUE TRANSMITA
+            if (clientsList.find(clientIp,_)):
+                clientList.modify((clientIp,_,true));
+            endIf
+        endIf
 
+        if ((data.find("CONTINUAR") || data.find("DESCONECTAR") || data.find("INTERRUMPIR") || data.find("CONECTAR"))):
+            message = "OK\n"
+            repeat
+                remain, err = client.send(message);
+                message = remain;
+            until (message = "")
+        endIf
 
-Def sendData(sktUDP,clientPort,clientIp):
-    while (true):
-        datagram,ip,port = sktUDP.receive();
-        if (datagram != nil):
-            sktUDP.sendTo(datagram,clientIp,clientPort);
     endWhile
+endDef;
+
+
+
+
