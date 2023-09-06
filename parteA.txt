@@ -35,7 +35,7 @@ EndDef
 Def clientConection(client,clientList):
     clientIp,_ = client.getPeer();
     while (true):
-    data = "";
+        data = "";
         repeat
             buffer,err = client.receive();
             if (err):
@@ -93,12 +93,18 @@ endDef;
 
 
 Def Client(serverIP,serverPort,vlcPort):
+    buff = "";
+
     //SOCKET TCP
     master = socket.TCP();
     master.bind(localhost,0);
 
     //SOCKET UDP
     sktUDP = socket.UDP()
+
+    //SOCKET UDP PARA ENVIAR AL VLC
+    sktVLC = socket.UDP();
+    skt.bind(localhost,vlcPort);
 
     client, err = master.connect(serverIP, serverPort);
     if (err):
@@ -113,6 +119,13 @@ Def Client(serverIP,serverPort,vlcPort):
             endPos = String.pos(data, "\n");
             clientPort = String.cut(data,initPos,endPos);
             sktUDP.bind(localhost,clientPort);
+            Thread(sktUDP,sktVLC,clientList);
+        endif
+
+        if (data.find("DESCONECTAR")):
+            sktVLC.close();
+            sktUDP.close();
+            break;
         endif
         repeat
             remain,err = client.send(data)
@@ -122,27 +135,29 @@ Def Client(serverIP,serverPort,vlcPort):
             endIf
             data = remain
         until (data = "")
-        if (data.find("DESCONECTAR")):
-            sktUDP.close();
-            break;
-	
-	endif
-
-	buff1 = data;
-       	remain, err = client.send(buff1)
-	While remain != NIL:
-	remain, err = client.send(remain)
-	
-	if data.find("DESCONECTAR") || data.find("CONECTAR") || data.find("INTERRUMPIR") || data.find("CONTINUAR"):
-		data, err = client.receive();
-		buff2 = data;
-		while data != 'NIL':
-		data, err = client.receive();
-		buff2 += data;
-		endWhile
-		if !data.find("OK") Break;
- 	endif
-        
+    
+        if data.find("DESCONECTAR") || data.find("CONECTAR") || data.find("INTERRUMPIR") || data.find("CONTINUAR"):
+            repeat
+                data, err = client.receive();
+                buff += data;
+            until (data = "")
+            if (!data.find("OK"))
+                break;
+            endIf
+        endif
     endWhile
 endDef
 
+
+Def transmissionVLC(sktUDP,sktVLC):
+    clientIp,clientPort = sktVLC.getHost();
+    while (true):
+        data,err = sktUDP.receive();
+        if (err):
+            sktUDP.close();
+            sktVLC.close();
+            break;
+        endif
+        sktVLC.sendTo(data,localhost,clientPort);
+    endWhile
+endDef
