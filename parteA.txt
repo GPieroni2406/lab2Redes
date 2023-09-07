@@ -7,22 +7,26 @@ Def Server(ServerIp,ServerPort) :
     master.bind(ServerIp,ServerPort);
     server = master.Listen();
     server.settimeout(0); 
-
    
     sktUDP = socket.UDP();
     sktUDP.bind(localhost,65535);
 
     Thread.new(sendData,sktUDP,clientsList);
+    Thread.new(addConections,server,clientsList);
+    
+    while(true):
+        time.sleep(1);
+    endWhile
+EndDef
 
+Def addConections(server,clientsList):
     while (true):
             client,err = server.accept();
             if (err != "timeout"):
                 Thread.new(clientConection,client,clientsList);
             endIf
     endWhile
-    master.close();
-EndDef
-
+endDef
 
 Def sendData(sktUDP,clientList):
     while (true):
@@ -108,13 +112,16 @@ Def Client(serverIP,serverPort,vlcPort):
     
     sktUDP = socket.UDP()
 
-
     client, err = master.connect(serverIP, serverPort);
     if (err):
         master.close();
         break;
     endIf
 
+    Thread.new(consoleData,sktUDP,vlcPort,client);
+endDef
+
+Def consoleData():
     while (true):
         data = IO.readLn();
         if (data.find("CONECTAR")):
@@ -148,11 +155,8 @@ Def Client(serverIP,serverPort,vlcPort):
             endIf
         endif
     endWhile
-endDef
-
 
 Def transmissionVLC(sktUDP,vlcPort):
-    
     while (true):
         data,err = sktUDP.receive();
         if (err):

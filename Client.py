@@ -3,8 +3,6 @@ import threading
 import sys
 
 def Client(serverIP, serverPort, vlcPort):
-    buff = ""
-
     master = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     master.bind(('localhost', 0))
     
@@ -15,36 +13,40 @@ def Client(serverIP, serverPort, vlcPort):
     except socket.error as e:
         master.close()
         return
+    threading.Thread(target=consoleData, args=(sktUDP,vlcPort,master)).start()
 
-    while True:
-        data = input()
-        if "CONECTAR" in data:
-            clientPort = int(data.split('<')[1].split('>')[0])
-            sktUDP.bind(('localhost', clientPort))
-            threading.Thread(target=transmissionVLC, args=(sktUDP, vlcPort)).start()
+def consoleData(sktUDP,vlcPort,master):
+        buff = ""
+        while True:
+            data = input()
+            if "CONECTAR" in data:
+                clientPort = int(data.split('<')[1].split('>')[0])
+                sktUDP.bind(('localhost', clientPort))
+                threading.Thread(target=transmissionVLC, args=(sktUDP, vlcPort)).start()
 
-        if "DESCONECTAR" in data:
-            sktUDP.close()
-            break
-        
-        while data:
-            try:
-                sent = master.send(data.encode())
-                data = data[sent:]
-            except socket.error as e:
-                master.close()
-                return
-
-        if any(word in data for word in ["DESCONECTAR", "CONECTAR", "INTERRUMPIR", "CONTINUAR"]):
-            try:
-                data = master.recv(1024).decode()
-                buff += data
-            except socket.error as e:
-                master.close()
-                return
-            
-            if "OK" not in data:
+            if "DESCONECTAR" in data:
+                sktUDP.close()
                 break
+            
+            while data:
+                try:
+                    sent = master.send(data.encode())
+                    data = data[sent:]
+                except socket.error as e:
+                    master.close()
+                    return
+
+            if any(word in data for word in ["DESCONECTAR", "CONECTAR", "INTERRUMPIR", "CONTINUAR"]):
+                try:
+                    data = master.recv(1024).decode()
+                    buff += data
+                except socket.error as e:
+                    master.close()
+                    return
+                
+                if "OK" not in data:
+                    break
+
 
 def transmissionVLC(sktUDP, vlcPort):
     while True:
@@ -61,7 +63,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     ServerIP = sys.argv[1]
-    ServerPort = int(sys.argv[2])  # Convierte a int
-    PuertoVLC = int(sys.argv[3])   # Convierte a int
+    ServerPort = int(sys.argv[2])
+    PuertoVLC = int(sys.argv[3])
 
     Client(ServerIP, ServerPort, PuertoVLC)

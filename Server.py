@@ -1,29 +1,29 @@
 import socket
+from time import sleep
 import threading
 import sys
-def Server(ServerIp, ServerPort):
-    clientsList = []
 
-    master = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    master.bind((ServerIp, ServerPort))
-    master.listen()
+def Server(server):
+    clientsList = []
 
     sktUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sktUDP.bind(('localhost', 65535))
 
     threading.Thread(target=sendData, args=(sktUDP, clientsList)).start()
+    threading.Thread(target=addConections, args=(server,clientsList)).start()
 
     while True:
+        sleep(1)
+
+def addConections(server,clientsList):
+     while True:
         try:
-            client, addr = master.accept()
+            client, addr = server.accept()
             threading.Thread(target=clientConection, args=(client, clientsList)).start()
         except socket.timeout:
             pass
 
-        
 
-    master.close()
-    sktUDP.close()
 
 def sendData(sktUDP,clientsList):
     try:
@@ -81,6 +81,7 @@ def clientConection(client, clientsList):
                 sent = client.send(message.encode())
                 message = message[sent:]
 
+
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Debe escribir : python server.py <ServerIP> <ServerPort>")
@@ -88,4 +89,9 @@ if __name__ == "__main__":
 
     ServerIP = sys.argv[1]
     ServerPort = int(sys.argv[2])
-    Server(ServerIP, ServerPort)
+    master = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    master.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    master.bind((ServerIP, ServerPort))
+    server = master.listen(1)
+    
+    Server(server)
