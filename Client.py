@@ -54,8 +54,7 @@ def transmissionVLC(sktUDP, vlcPort):
         except socket.error as e:
             sktUDP.close()
             break
-
-# Esto ejecutará el código solo si el script se invoca directamente
+        
 if __name__ == "__main__":
     if len(sys.argv) != 4:
         print("Uso: python cliente.py <ServerIP> <ServerPort> <PuertoVLC>")

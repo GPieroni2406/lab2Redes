@@ -11,6 +11,8 @@ def Server(ServerIp, ServerPort):
     sktUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sktUDP.bind(('localhost', 65535))
 
+    threading.Thread(target=sendData, args=(sktUDP, clientsList)).start()
+
     while True:
         try:
             client, addr = master.accept()
@@ -18,16 +20,22 @@ def Server(ServerIp, ServerPort):
         except socket.timeout:
             pass
 
-        try:
-            datagram, (ip, port) = sktUDP.recvfrom(1024)
-            for c in clientsList:
-                if c[2]:
-                    sktUDP.sendto(datagram, (c[0], c[1]))
-        except socket.timeout:
-            pass
+        
 
     master.close()
     sktUDP.close()
+
+def sendData(sktUDP,clientsList):
+    try:
+        datagram, (ip, port) = sktUDP.recvfrom(1024)
+        for c in clientsList:
+            if c[2]:
+                sktUDP.sendto(datagram, (c[0], c[1]))
+    except socket.timeout:
+        pass
+
+
+
 
 def clientConection(client, clientsList):
     clientIp, _ = client.getpeername()

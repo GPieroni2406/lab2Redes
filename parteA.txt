@@ -12,14 +12,21 @@ Def Server(ServerIp,ServerPort) :
     sktUDP = socket.UDP();
     sktUDP.bind(localhost,65535);
 
+    Thread.new(sendData,sktUDP,clientsList);
 
-    while (true)
+    while (true):
             client,err = server.accept();
             if (err != "timeout"):
                 Thread.new(clientConection,client,clientsList);
             endIf
+    endWhile
+    master.close();
+EndDef
 
-            datagram,ip,port = sktUDP.receive();
+
+Def sendData(sktUDP,clientList):
+    while (true):
+        datagram,ip,port = sktUDP.receive();
             if (datagram != nil):
                 for c in clientsList:
                     if (c.getReady())
@@ -28,8 +35,7 @@ Def Server(ServerIp,ServerPort) :
                 endFor
             endIf
     endWhile
-    master.close();
-EndDef
+endDef
 
 
 Def clientConection(client,clientList):
@@ -90,7 +96,7 @@ Def clientConection(client,clientList):
     endWhile
 endDef;
 
-
+------------------------------------------------------------------------------------------------------------------------------
 
 Def Client(serverIP,serverPort,vlcPort):
     buff = "";
