@@ -3,11 +3,13 @@ from time import sleep
 import threading
 import sys
 import logging
+import re
+
 def Server(server):
     clientsList = []
 
     sktUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sktUDP.bind(('localhost', 65535))
+    sktUDP.bind(('127.0.0.1', 65534))
 
     print(f'Se creo el socket UDP')
 
@@ -22,8 +24,7 @@ def addConections(server,clientsList):
      while True:
         try:
             client, addr = server.accept()
-            print(
-                    f'Se acepta el cliente {addr}')
+            print(f'Se acepta el cliente {addr}')
             threading.Thread(target=clientConection, args=(client, clientsList)).start()
         except socket.timeout:
             pass
@@ -31,14 +32,20 @@ def addConections(server,clientsList):
 
 
 def sendData(sktUDP,clientsList):
-    print(f'Enviando datagramas por UDP')
+    print(f'Recibiendo datagramas por UDP')
     try:
-        datagram, (ip, port) = sktUDP.recvfrom(1024)
+        datagram, (ip, port) = sktUDP.recvfrom(65000)
+        print(f'El datagrama transmitido es {datagram}')
+        print(f'Se muestra la lista clientlist {clientsList}')
+        print(f'Enviando datagramas a todos los clientes por UDP')
         for c in clientsList:
             if c[2]:
                 sktUDP.sendto(datagram, (c[0], c[1]))
     except socket.timeout:
+        print(f'El socket sufrió timeout al recibir el datagrama')
         pass
+    except socket.error as e:
+        print(f'El socket sufrió un error de tipo {e} al recibir el datagrama')
 
 
 
@@ -57,9 +64,15 @@ def clientConection(client, clientsList):
 
         if "CONECTAR" in data:
             print(f'Agregando cliente a los conectados')
-            clientPort = int(data.split('<')[1].split('>')[0])
+            patron = r'\d+'
+            resultado = re.search(patron, data)
+            if resultado:
+                numero = resultado.group()
+            clientPort = int(numero)
+            print(f'El puerto elegido es {numero}')
             if not any([c for c in clientsList if c[0] == clientIp]):
                 clientsList.append((clientIp, clientPort, True))
+            print(f'La lista actual de conectados es {clientsList}')
 
         if "DESCONECTAR" in data:
             print(f'Desconectando cliente')
