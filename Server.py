@@ -1,6 +1,6 @@
 import socket
 import threading
-
+import sys
 def Server(ServerIp, ServerPort):
     clientsList = []
 
@@ -72,3 +72,12 @@ def clientConection(client, clientsList):
             while message:
                 sent = client.send(message.encode())
                 message = message[sent:]
+
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        print("Debe escribir : python server.py <ServerIP> <ServerPort>")
+        sys.exit(1)
+
+    ServerIP = sys.argv[1]
+    ServerPort = int(sys.argv[2])
+    Server(ServerIP, ServerPort)

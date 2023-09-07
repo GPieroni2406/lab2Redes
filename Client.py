@@ -1,5 +1,6 @@
 import socket
 import threading
+import sys
 
 def Client(serverIP, serverPort, vlcPort):
     buff = ""
@@ -53,3 +54,15 @@ def transmissionVLC(sktUDP, vlcPort):
         except socket.error as e:
             sktUDP.close()
             break
+
+# Esto ejecutará el código solo si el script se invoca directamente
+if __name__ == "__main__":
+    if len(sys.argv) != 4:
+        print("Uso: python cliente.py <ServerIP> <ServerPort> <PuertoVLC>")
+        sys.exit(1)
+
+    ServerIP = sys.argv[1]
+    ServerPort = int(sys.argv[2])  # Convierte a int
+    PuertoVLC = int(sys.argv[3])   # Convierte a int
+
+    Client(ServerIP, ServerPort, PuertoVLC)
