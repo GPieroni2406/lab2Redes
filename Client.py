@@ -24,26 +24,45 @@ def consoleData(sktUDP,vlcPort,master):
         while True:
             data = input()
             if "CONECTAR" in data:
-                patron = r'\d+'
-                resultado = re.search(patron, data)
-                if resultado:
-                    numero = resultado.group()
-                clientPort = int(numero)
-                sktUDP.bind(('127.0.0.1', clientPort))
-                threading.Thread(target=transmissionVLC, args=(sktUDP, vlcPort)).start()
+                data = data + str(vlcPort)
+                while data:
+                    try:
+                        sent = master.send(data.encode())
+                        data = data[sent:]
+                    except socket.error as e:
+                        master.close()
+                        return
 
             if "DESCONECTAR" in data:
-                sktUDP.close()
+                while data:
+                    try:
+                        sent = master.send(data.encode())
+                        data = data[sent:]
+                    except socket.error as e:
+                        master.close()
+                        return
+                    
+                master.close()
                 break
             
-            while data:
-                try:
-                    sent = master.send(data.encode())
-                    data = data[sent:]
-                except socket.error as e:
-                    master.close()
-                    return
-
+            if "INTERRUMPIR" in data:
+                while data:
+                    try:
+                        sent = master.send(data.encode())
+                        data = data[sent:]
+                    except socket.error as e:
+                        master.close()
+                        return
+            if "CONTINUAR" in data:
+                while data:
+                    try:
+                        sent = master.send(data.encode())
+                        data = data[sent:]
+                    except socket.error as e:
+                        master.close()
+                        return
+            
+                
             if any(word in data for word in ["DESCONECTAR", "CONECTAR", "INTERRUMPIR", "CONTINUAR"]):
                 try:
                     data = master.recv(1024).decode()

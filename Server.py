@@ -5,63 +5,68 @@ import sys
 import logging
 import re
 
-def Server(server):
-    clientsList = []
+ServerIP = sys.argv[1]
+ServerPort = int(sys.argv[2])
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+server.bind((ServerIP, ServerPort))
+server.listen()
+clientsList = []
+sktUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sktUDP.bind(('127.0.0.1', 65534))
+sktUdpEnvio = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    sktUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sktUDP.bind(('127.0.0.1', 65534))
+
+def Server():
 
     print(f'Se creo el socket UDP')
 
-    threading.Thread(target=sendData, args=(sktUDP, clientsList)).start()
-    threading.Thread(target=addConections, args=(server,clientsList)).start()
+    threading.Thread(target=sendData, args=()).start()
+    threading.Thread(target=addConections, args=()).start()
 
     while True:
         sleep(1)
 
-def addConections(server,clientsList):
+def addConections():
      print(f'Aceptando clientes')
      while True:
         try:
             client, addr = server.accept()
             print(f'Se acepta el cliente {addr}')
-            threading.Thread(target=clientConection, args=(client, clientsList)).start()
+            threading.Thread(target=clientConection, args=(client,)).start()
         except socket.timeout:
             pass
 
 
 
-def sendData(sktUDP,clientsList):
-    print(f'Recibiendo datagramas por UDP')
-    try:
-        datagram, (ip, port) = sktUDP.recvfrom(65000)
-        print(f'El datagrama transmitido es {datagram}')
-        print(f'Se muestra la lista clientlist {clientsList}')
-        print(f'Enviando datagramas a todos los clientes por UDP')
-        for c in clientsList:
-            if c[2]:
-                sktUDP.sendto(datagram, (c[0], c[1]))
-    except socket.timeout:
-        print(f'El socket sufrió timeout al recibir el datagrama')
-        pass
-    except socket.error as e:
-        print(f'El socket sufrió un error de tipo {e} al recibir el datagrama')
+def sendData():
+    while(True):
+        print(f'Recibiendo datagramas por UDP')
+        try:
+            datagram, (ip, port) = sktUDP.recvfrom(65000)
+            print(f'Enviando datagramas a todos los clientes por UDP')
+            for c in clientsList:
+                if c[2]:
+                    sktUdpEnvio.sendto(datagram, (c[0], c[1]))
+        except socket.timeout:
+            print(f'El socket sufrió timeout al recibir el datagrama')
+            pass
+        except socket.error as e:
+            print(f'El socket sufrió un error de tipo {e} al recibir el datagrama')
 
 
 
 
-def clientConection(client, clientsList):
+def clientConection(client):
     clientIp, _ = client.getpeername()
     data = ""
 
     while True:
-        buffer = client.recv(1024).decode()
+        buffer = client.recv(4096).decode("utf-8")
         if not buffer:  # Si el buffer está vacío, el cliente se ha desconectado
             client.close()
             break
-
         data += buffer
-
         if "CONECTAR" in data:
             print(f'Agregando cliente a los conectados')
             patron = r'\d+'
@@ -109,12 +114,5 @@ if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Debe escribir : python Server.py <ServerIP> <ServerPort>")
         sys.exit(1)
-
-    ServerIP = sys.argv[1]
-    ServerPort = int(sys.argv[2])
-    master = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    master.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    master.bind((ServerIP, ServerPort))
-    master.listen(1)
     print(f'Se creo el socket TCP, bindeado en : {ServerIP} y {ServerPort}')
-    Server(master)
+    Server()
