@@ -1,1 +1,1 @@
-python Client.py 192.168.1.10 3000 5000
+python Client.py 127.0.0.1 7000 8888

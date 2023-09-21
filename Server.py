@@ -15,7 +15,7 @@ clientsList = []
 sktUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sktUDP.bind(('127.0.0.1', 65534))
 sktUdpEnvio = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
+clientsListLock = threading.Lock()
 
 def Server():
 
@@ -41,13 +41,12 @@ def addConections():
 
 def sendData():
     while(True):
-        print(f'Recibiendo datagramas por UDP')
         try:
             datagram, (ip, port) = sktUDP.recvfrom(65000)
-            print(f'Enviando datagramas a todos los clientes por UDP')
-            for c in clientsList:
-                if c[2]:
-                    sktUdpEnvio.sendto(datagram, (c[0], c[1]))
+            with clientsListLock: #Para mutuoexcluir la lista
+                for c in clientsList:
+                    if c[2]==True:
+                        sktUdpEnvio.sendto(datagram, (c[0], c[1]))
         except socket.timeout:
             print(f'El socket sufrió timeout al recibir el datagrama')
             pass
@@ -58,10 +57,11 @@ def sendData():
 
 
 def clientConection(client):
-    clientIp, _ = client.getpeername()
-    data = ""
+    clientIp, clientPort = client.getpeername()
+
 
     while True:
+        data = ""
         buffer = client.recv(4096).decode("utf-8")
         if not buffer:  # Si el buffer está vacío, el cliente se ha desconectado
             client.close()
@@ -75,15 +75,17 @@ def clientConection(client):
                 numero = resultado.group()
             clientPort = int(numero)
             print(f'El puerto elegido es {numero}')
-            if not any([c for c in clientsList if c[0] == clientIp]):
-                clientsList.append((clientIp, clientPort, True))
-            print(f'La lista actual de conectados es {clientsList}')
+            with clientsListLock: #Para mutuoexcluir la lista
+                if not any([c for c in clientsList if c[0] == clientIp]):
+                    clientsList.append((clientIp, clientPort, True))
+                    print(f'La lista actual de conectados es {clientsList}')
 
         if "DESCONECTAR" in data:
             print(f'Desconectando cliente')
-            clientsList[:] = [c for c in clientsList if c[0] != clientIp]
+            with clientsListLock: #Para mutuoexcluir la lista
+                clientsList[:] = [c for c in clientsList if c[0] != clientIp]
             
-            message = "OK\n"
+            message = "OK"
             while message:
                 sent = client.send(message.encode())
                 message = message[sent:]
@@ -93,21 +95,28 @@ def clientConection(client):
 
         if "INTERRUMPIR" in data:
             print(f'Interrumpiendo conexion del cliente')
-            for index, (ip, port, ready) in enumerate(clientsList):
-                if ip == clientIp:
-                    clientsList[index] = (ip, port, False)
+            with clientsListLock: #Para mutuoexcluir la lista
+                for index, (ip, port, ready) in enumerate(clientsList):
+                    if ip == clientIp:
+                        clientsList[index] = (ip, port, False)
+                        print(f'Cliente {clientIp} Interrumpido')
 
         if "CONTINUAR" in data:
             print(f'Reanudando conexion del cliente')
-            for index, (ip, port, ready) in enumerate(clientsList):
-                if ip == clientIp:
-                    clientsList[index] = (ip, port, True)
+            with clientsListLock: #Para mutuoexcluir la lista
+                for index, (ip, port, ready) in enumerate(clientsList):
+                    if ip == clientIp:
+                        clientsList[index] = (ip, port, True)
 
         if any(word in data for word in ["CONTINUAR", "DESCONECTAR", "INTERRUMPIR", "CONECTAR"]):
-            message = "OK\n"
+            message = "OK"
             while message:
-                sent = client.send(message.encode())
-                message = message[sent:]
+                    try:
+                        sent = client.send(message.encode())
+                        message = message[sent:]
+                    except socket.error as e:
+                        client.close()
+                        return               
 
 
 if __name__ == "__main__":

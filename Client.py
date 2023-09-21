@@ -15,13 +15,14 @@ def Client(serverIP, serverPort, vlcPort):
         print(f'no consigue conectarse, por {e}' )
         master.close()
         return
-    threading.Thread(target=consoleData, args=(sktUDP,vlcPort,master)).start()
+    threading.Thread(target=consoleData, args=(vlcPort,master)).start()
 
 def consoleData(vlcPort,master):
         buff = ""
         print(f'Se abre hilo de conexión TCP con servidor')
         while True:
             data = input()
+            buff = data
             if "CONECTAR" in data:
                 data = data + str(vlcPort)
                 while data:
@@ -31,6 +32,7 @@ def consoleData(vlcPort,master):
                     except socket.error as e:
                         master.close()
                         return
+                print(f'Se envia CONECTAR')
 
             if "DESCONECTAR" in data:
                 while data:
@@ -40,7 +42,7 @@ def consoleData(vlcPort,master):
                     except socket.error as e:
                         master.close()
                         return
-                    
+                print(f'Se envia DESCONECTAR')                    
                 master.close()
                 break
             
@@ -52,6 +54,7 @@ def consoleData(vlcPort,master):
                     except socket.error as e:
                         master.close()
                         return
+                print(f'Se envia INTERRUMPIR')
             if "CONTINUAR" in data:
                 while data:
                     try:
@@ -60,17 +63,19 @@ def consoleData(vlcPort,master):
                     except socket.error as e:
                         master.close()
                         return
+                print(f'Se envia CONTINUAR')    
             
                 
-            if any(word in data for word in ["DESCONECTAR", "CONECTAR", "INTERRUMPIR", "CONTINUAR"]):
+            if any(word in buff for word in ["DESCONECTAR", "CONECTAR", "INTERRUMPIR", "CONTINUAR"]):
+                message = ""
                 try:
                     data = master.recv(1024).decode()
-                    buff += data
+                    message += data
                 except socket.error as e:
                     master.close()
                     return
-                
-                if "OK" not in data:
+                print(f'Se recibe {message}')
+                if "OK" not in message:
                     break
 
 
