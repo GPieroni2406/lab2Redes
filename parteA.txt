@@ -50,6 +50,7 @@ Def clientConection(client,clientList):
             buffer,err = client.receive();
             if (err):
                 client.close();
+		break;
             data += buffer;
         until (buffer == "")    
 
@@ -93,6 +94,9 @@ Def clientConection(client,clientList):
             message = "OK\n"
             repeat
                 remain, err = client.send(message);
+		if (err):
+			client.close();
+			break;
                 message = remain;
             until (message = "")
         endIf
@@ -108,8 +112,6 @@ Def Client(serverIP,serverPort,vlcPort):
  
     master = socket.TCP();
     master.bind(localhost,0);
-
-    
     sktUDP = socket.UDP()
 
     client, err = master.connect(serverIP, serverPort);
@@ -118,51 +120,66 @@ Def Client(serverIP,serverPort,vlcPort):
         break;
     endIf
 
-    Thread.new(consoleData,sktUDP,vlcPort,client);
+    Thread.new(consoleData,vlcPort,client);
 endDef
 
-Def consoleData():
+Def consoleData(vlcPort,client):
     while (true):
         data = IO.readLn();
         if (data.find("CONECTAR")):
-            initPos = String.pos(data,"CONECTAR")+1;
-            endPos = String.pos(data, "\n");
-            clientPort = String.cut(data,initPos,endPos);
-            sktUDP.bind(localhost,clientPort);
-            Thread.new(transmissionVLC, sktUDP,vlcPort);
+            clientPort = vlcPort;
+	    buffer = data + vlcPort;
+	    repeat
+           	repeat
+            		remain,err = client.send(buffer)
+            		if (err):
+               	   		client.close();
+				break;
+            		endIf
+            		buffer = remain
+       		until (buffer = "")
         endif
 
         if (data.find("DESCONECTAR")):
+	    buffer = data;
+	    repeat
+           	repeat
+            		remain,err = client.send(buffer)
+            		if (err):
+               	   		client.close();
+				break;
+            		endIf
+            		buffer = remain
+       		until (buffer = "")
             sktUDP.close();
             break;
         endif
-        repeat
-            remain,err = client.send(data)
-            if (err):
-                break;
-                client.close();
-            endIf
-            data = remain
-        until (data = "")
-    
-        if data.find("DESCONECTAR") || data.find("CONECTAR") || data.find("INTERRUMPIR") || data.find("CONTINUAR"):
+	if (data.find("INTERRUMPIR")):
+        	repeat
+            		remain,err = client.send(data)
+            		if (err):
+                		client.close();
+				break;
+            		endIf
+            		data = remain
+        	until (data = "")
+	if (data.find("CONTINUAR")):
+        	repeat
+            		remain,err = client.send(data)
+            		if (err):
+                		client.close();
+				break;
+            		endIf
+            		data = remain
+        	until (data = "")    
+        if (data.find("CONECTAR") || data.find("INTERRUMPIR") || data.find("CONTINUAR")):
             repeat
                 data, err = client.receive();
                 buff += data;
             until (data = "")
             if (!data.find("OK"))
-                break;
+		client.close();
+		break;
             endIf
         endif
     endWhile
-
-Def transmissionVLC(sktUDP,vlcPort):
-    while (true):
-        data,err = sktUDP.receive();
-        if (err):
-            sktUDP.close();
-            break;
-        endif
-        sktUDP.sendTo(data,localhost,vlcPort);
-    endWhile
-endDef

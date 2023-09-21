@@ -5,7 +5,6 @@ import re
 
 def Client(serverIP, serverPort, vlcPort):
     master = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    #master.bind(('127.0.0.1', 0))
     print(f'bindea sockettcp')
     sktUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -18,7 +17,7 @@ def Client(serverIP, serverPort, vlcPort):
         return
     threading.Thread(target=consoleData, args=(sktUDP,vlcPort,master)).start()
 
-def consoleData(sktUDP,vlcPort,master):
+def consoleData(vlcPort,master):
         buff = ""
         print(f'Se abre hilo de conexión TCP con servidor')
         while True:
@@ -80,7 +79,6 @@ def transmissionVLC(sktUDP, vlcPort):
         try:
             data, addr = sktUDP.recvfrom(65000)
             sktUDP.sendto(data, ('127.0.0.1', vlcPort))
-            print(f'El datagrama recibido es {data}')
         except socket.error as e:
             sktUDP.close()
             break
