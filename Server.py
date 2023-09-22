@@ -67,7 +67,7 @@ def clientConection(client):
             client.close()
             break
         data += buffer
-        if "CONECTAR" in data:
+        if ("CONECTAR" in data) and ("DESCONECTAR" not in data):
             print(f'Agregando cliente a los conectados')
             patron = r'\d+'
             resultado = re.search(patron, data)
@@ -80,7 +80,7 @@ def clientConection(client):
                     clientsList.append((clientIp, clientPort, True))
                     print(f'La lista actual de conectados es {clientsList}')
 
-        if "DESCONECTAR" in data:
+        if "DESCONECTAR"==data:
             print(f'Desconectando cliente')
             with clientsListLock: #Para mutuoexcluir la lista
                 clientsList[:] = [c for c in clientsList if c[0] != clientIp]
@@ -93,7 +93,7 @@ def clientConection(client):
             client.close()
             break
 
-        if "INTERRUMPIR" in data:
+        if "INTERRUMPIR"==data:
             print(f'Interrumpiendo conexion del cliente')
             with clientsListLock: #Para mutuoexcluir la lista
                 for index, (ip, port, ready) in enumerate(clientsList):
@@ -101,14 +101,14 @@ def clientConection(client):
                         clientsList[index] = (ip, port, False)
                         print(f'Cliente {clientIp} Interrumpido')
 
-        if "CONTINUAR" in data:
+        if "CONTINUAR"==data:
             print(f'Reanudando conexion del cliente')
             with clientsListLock: #Para mutuoexcluir la lista
                 for index, (ip, port, ready) in enumerate(clientsList):
                     if ip == clientIp:
                         clientsList[index] = (ip, port, True)
 
-        if any(word in data for word in ["CONTINUAR", "DESCONECTAR", "INTERRUMPIR", "CONECTAR"]):
+        if any(word in data for word in ["CONTINUAR","INTERRUMPIR", "CONECTAR"]):
             message = "OK"
             while message:
                     try:

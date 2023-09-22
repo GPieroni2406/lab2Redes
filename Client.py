@@ -23,7 +23,7 @@ def consoleData(vlcPort,master):
         while True:
             data = input()
             buff = data
-            if "CONECTAR" in data:
+            if "CONECTAR"==data:
                 data = data + str(vlcPort)
                 while data:
                     try:
@@ -34,7 +34,7 @@ def consoleData(vlcPort,master):
                         return
                 print(f'Se envia CONECTAR')
 
-            if "DESCONECTAR" in data:
+            if "DESCONECTAR"==data:
                 while data:
                     try:
                         sent = master.send(data.encode())
@@ -44,9 +44,10 @@ def consoleData(vlcPort,master):
                         return
                 print(f'Se envia DESCONECTAR')                    
                 master.close()
+                print(f'Usted se desconecto! Para ver el video inicialice otra conexion.')
                 break
             
-            if "INTERRUMPIR" in data:
+            if "INTERRUMPIR"==data:
                 while data:
                     try:
                         sent = master.send(data.encode())
@@ -55,7 +56,7 @@ def consoleData(vlcPort,master):
                         master.close()
                         return
                 print(f'Se envia INTERRUMPIR')
-            if "CONTINUAR" in data:
+            if "CONTINUAR"==data:
                 while data:
                     try:
                         sent = master.send(data.encode())
@@ -77,17 +78,10 @@ def consoleData(vlcPort,master):
                 print(f'Se recibe {message}')
                 if "OK" not in message:
                     break
+            else :
+                print(f'Se esperaba CONECTAR,DESCONECTAR,CONTINUAR,INTERRUMPIR, pero usted mando {buff}. REINTENTE!!!')
 
 
-def transmissionVLC(sktUDP, vlcPort):
-    while True:
-        try:
-            data, addr = sktUDP.recvfrom(65000)
-            sktUDP.sendto(data, ('127.0.0.1', vlcPort))
-        except socket.error as e:
-            sktUDP.close()
-            break
-        
 if __name__ == "__main__":
     if len(sys.argv) != 4:
         print("Uso: python cliente.py <ServerIP> <ServerPort> <PuertoVLC>")
