@@ -1,7 +1,7 @@
 Def Server(ServerIp,ServerPort) :
-
-    clientsList = [(clientIp,clientPort,clientReady)]
-
+    Semaforo s; //SE CREA UN SEMAFORO PARA MUTUOEXCLUIR LA LISTA DE CLIENTES. 	
+    Init(s,1);	
+    clientsList = [(clientIp,clientPort,clientReady)];
 
     master = socket.TCP();
     master.bind(ServerIp,ServerPort);
@@ -31,13 +31,15 @@ endDef
 Def sendData(sktUDP,clientList):
     while (true):
         datagram,ip,port = sktUDP.receive();
-            if (datagram != nil):
+        if (datagram != nil):
+		P(s);
                 for c in clientsList:
                     if (c.getReady())
                         sktUDP.sendTo(datagram,c.clientIp,c.clientPort);
                     endIf
                 endFor
-            endIf
+		V(s);
+        endIf
     endWhile
 endDef
 
@@ -58,16 +60,19 @@ Def clientConection(client,clientList):
             initPos = String.pos(data,"CONECTAR")+1;
             endPos = String.pos(data, "\n");
             clientPort = String.sub(data,initPos,endPos);
+	    P(s);
             if (!clientsList.find(clientIp,_,_)): 
                 clientList.add((clientIp,clientsPort,true));
             endIf
+	    V(s);
         endif
 
         if (data.find("DESCONECTAR")): 
+	    P(s);
             if (clientsList.find(clientIp,_,_)):
                 clientList.remove((clientIp,_,_));
             endIf
-
+	    V(s);
             message = "OK\n"
             repeat
                 remain, err = client.send(message);
@@ -79,18 +84,22 @@ Def clientConection(client,clientList):
         endIf    
 
         if data.find("INTERRUMPIR"): //LO PONGO EN FALSE EN LA LISTA PARA QUE NO TRANSMITA
+	    P(s);
             if (clientsList.find(clientIp,_,_)):
                clientList.modify((clientIp,_,false));
             endIf
+	    V(s);
         endIf
 
-        if data.find("CONTINUAR"): //LO PONGO EN TRUE EN LA LISTA PARA QUE TRANSMITA
+        if data.find("CONTINUAR"): //LO PONGO EN TRUE EN LA LISTA PARA QUE TRANSMITA'
+            P(s);
             if (clientsList.find(clientIp,_)):
                 clientList.modify((clientIp,_,true));
             endIf
+	    V(s);
         endIf
 
-        if ((data.find("CONTINUAR") || data.find("DESCONECTAR") || data.find("INTERRUMPIR") || data.find("CONECTAR"))):
+        if ((data.find("CONTINUAR") ||data.find("INTERRUMPIR") || data.find("CONECTAR"))):
             message = "OK\n"
             repeat
                 remain, err = client.send(message);
@@ -109,7 +118,6 @@ endDef;
 Def Client(serverIP,serverPort,vlcPort):
     buff = "";
 
- 
     master = socket.TCP();
     master.bind(localhost,0);
     sktUDP = socket.UDP()
@@ -142,15 +150,14 @@ Def consoleData(vlcPort,client):
 
         if (data.find("DESCONECTAR")):
 	    buffer = data;
-	    repeat
-           	repeat
-            		remain,err = client.send(buffer)
-            		if (err):
-               	   		client.close();
-				break;
-            		endIf
-            		buffer = remain
-       		until (buffer = "")
+            repeat
+            	remain,err = client.send(buffer)
+            	if (err):
+               	   	client.close();
+			break;
+            	endIf
+            	buffer = remain
+       	    until (buffer = "")
             sktUDP.close();
             break;
         endif
