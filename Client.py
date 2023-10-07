@@ -23,7 +23,7 @@ def consoleData(vlcPort,master):
         while True:
             data = input()
             buff = data
-            if "CONECTAR"==data:
+            if "CONECTAR"== data:
                 data = data + str(vlcPort)
                 while data:
                     try:
@@ -34,7 +34,7 @@ def consoleData(vlcPort,master):
                         return
                 print(f'Se envia CONECTAR')
 
-            if "DESCONECTAR"==data:
+            if "DESCONECTAR"== data:
                 while data:
                     try:
                         sent = master.send(data.encode())
@@ -47,7 +47,7 @@ def consoleData(vlcPort,master):
                 print(f'Usted se desconecto! Para ver el video inicialice otra conexion.')
                 break
             
-            if "INTERRUMPIR"==data:
+            if "INTERRUMPIR"== data:
                 while data:
                     try:
                         sent = master.send(data.encode())
@@ -56,7 +56,7 @@ def consoleData(vlcPort,master):
                         master.close()
                         return
                 print(f'Se envia INTERRUMPIR')
-            if "CONTINUAR"==data:
+            if "CONTINUAR"== data:
                 while data:
                     try:
                         sent = master.send(data.encode())
@@ -67,7 +67,7 @@ def consoleData(vlcPort,master):
                 print(f'Se envia CONTINUAR')    
             
                 
-            if any(word in buff for word in ["DESCONECTAR", "CONECTAR", "INTERRUMPIR", "CONTINUAR"]):
+            if buff == "CONTINUAR" or buff=="CONECTAR" or buff=="DESCONECTAR" or buff=="INTERRUMPIR":
                 message = ""
                 try:
                     data = master.recv(1024).decode()
