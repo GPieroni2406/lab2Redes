@@ -20,9 +20,9 @@ def consoleData(vlcPort,master):
         buff = ""
         print(f'Se abre hilo de conexión TCP con servidor')
         while True:
-            data = input()
+            data = input()+"\n"
             buff = data
-            if "CONECTAR"== data:
+            if "CONECTAR\n"== data:
                 data = data + str(vlcPort)
                 while data:
                     try:
@@ -33,7 +33,7 @@ def consoleData(vlcPort,master):
                         return
                 print(f'Se envia CONECTAR')
 
-            if "DESCONECTAR"== data:
+            if "DESCONECTAR\n"== data:
                 while data:
                     try:
                         sent = master.send(data.encode())
@@ -46,7 +46,7 @@ def consoleData(vlcPort,master):
                 print(f'Usted se desconecto! Para ver el video inicialice otra conexion.')
                 break
             
-            if "INTERRUMPIR"== data:
+            if "INTERRUMPIR\n"== data:
                 while data:
                     try:
                         sent = master.send(data.encode())
@@ -55,7 +55,7 @@ def consoleData(vlcPort,master):
                         master.close()
                         return
                 print(f'Se envia INTERRUMPIR')
-            if "CONTINUAR"== data:
+            if "CONTINUAR\n"== data:
                 while data:
                     try:
                         sent = master.send(data.encode())
@@ -66,11 +66,11 @@ def consoleData(vlcPort,master):
                 print(f'Se envia CONTINUAR')    
             
                 
-            if buff == "CONTINUAR" or buff=="CONECTAR" or buff=="DESCONECTAR" or buff=="INTERRUMPIR":
+            if buff == "CONTINUAR\n" or buff=="CONECTAR\n" or buff=="DESCONECTAR\n" or buff=="INTERRUMPIR\n":
                 message = ""
                 while ("\n" not in message):
                     try:
-                        data = master.recv(0).decode()
+                        data = master.recv(1024).decode()
                         message += data
                     except socket.error as e:
                         master.close()

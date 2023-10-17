@@ -59,16 +59,16 @@ def sendData():
 def clientConection(client):
     clientIp, clientPort = client.getpeername()
 
-
     while True:
-        data = ""
+        data= ""
         while ("\n" not in data):
             try:
-                buffer = client.recv(0).decode("utf-8")
+                buffer = client.recv(4096).decode("utf-8")
                 data += buffer
             except socket.error as e:
                 client.close()
                 return
+        data = data.strip("\n")
         if "CONECTAR" == data:
             print(f'Agregando cliente a los conectados')
             patron = r'\d+'
@@ -87,7 +87,7 @@ def clientConection(client):
             with clientsListLock: #Para mutuoexcluir la lista
                 clientsList[:] = [c for c in clientsList if (c[0] != clientIp and c[1] != clientPort)]
             
-            message = "OK"
+            message = "OK\n"
             while message:
                 try:
                     sent = client.send(message.encode())
@@ -114,7 +114,7 @@ def clientConection(client):
                         clientsList[index] = (ip, port, True)
 
         if any(word in data for word in ["CONTINUAR","INTERRUMPIR", "CONECTAR"]):
-            message = "OK"
+            message = "OK\n"
             while message:
                     try:
                         sent = client.send(message.encode())
