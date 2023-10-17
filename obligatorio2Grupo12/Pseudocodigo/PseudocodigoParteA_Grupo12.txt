@@ -1,0 +1,193 @@
+Def Server(ServerIp,ServerPort) :
+    Semaforo s; //SE CREA UN SEMAFORO PARA MUTUOEXCLUIR LA LISTA DE CLIENTES. 	
+    Init(s,1);	
+    clientsList = [(clientIp,clientPort,clientReady)];
+
+    master = socket.TCP();
+    master.bind(ServerIp,ServerPort);
+    server = master.Listen();
+    server.settimeout(0); 
+   
+    sktUDP = socket.UDP();
+    sktUDP.bind(localhost,65535);
+
+    Thread.new(sendData,sktUDP,clientsList);
+    Thread.new(addConections,server,clientsList);
+    
+    while(true):
+        time.sleep(1);
+    endWhile
+EndDef
+
+Def addConections(server,clientsList):
+    while (true):
+            client,err = server.accept();
+            if (err != "timeout"):
+                Thread.new(clientConection,client,clientsList);
+            endIf
+    endWhile
+endDef
+
+Def sendData(sktUDP,clientList):
+    while (true):
+        datagram,ip,port = sktUDP.receive();
+        if (datagram != nil):
+		P(s);
+                for c in clientsList:
+                    if (c.getReady())
+                        sktUDP.sendTo(datagram,c.clientIp,c.clientPort);
+                    endIf
+                endFor
+		V(s);
+        endIf
+    endWhile
+endDef
+
+
+Def clientConection(client,clientList):
+    clientIp,_ = client.getPeer();
+    while (true):
+        data = "";
+        repeat
+            buffer,err = client.receive();
+            if (err):
+                client.close();
+		break;
+            data += buffer;
+	    pos = String.pos(buffer, ‘/n’)
+        until (pos > 0) // Si la posicion es 0 significa que aun no llego todo el mensaje.
+
+        if (data.find("CONECTAR")):
+            initPos = String.pos(data,"CONECTAR")+1;
+            endPos = String.pos(data, "\n");
+            clientPort = String.sub(data,initPos,endPos);
+	    P(s);
+            if (!clientsList.find(clientIp,_,_)): 
+                clientList.add((clientIp,clientsPort,true));
+            endIf
+	    V(s);
+        endif
+
+        if (data.find("DESCONECTAR")): 
+	    P(s);
+            if (clientsList.find(clientIp,_,_)):
+                clientList.remove((clientIp,_,_));
+            endIf
+	    V(s);
+            message = "OK\n"
+            repeat
+                remain, err = client.send(message);
+                message = remain;
+            until (message = "")
+
+            client.close();
+            break;
+        endIf    
+
+        if data.find("INTERRUMPIR"): //LO PONGO EN FALSE EN LA LISTA PARA QUE NO TRANSMITA
+	    P(s);
+            if (clientsList.find(clientIp,_,_)):
+               clientList.modify((clientIp,_,false));
+            endIf
+	    V(s);
+        endIf
+
+        if data.find("CONTINUAR"): //LO PONGO EN TRUE EN LA LISTA PARA QUE TRANSMITA'
+            P(s);
+            if (clientsList.find(clientIp,_)):
+                clientList.modify((clientIp,_,true));
+            endIf
+	    V(s);
+        endIf
+
+        if ((data.find("CONTINUAR") ||data.find("INTERRUMPIR") || data.find("CONECTAR"))):
+            message = "OK\n"
+            repeat
+                remain, err = client.send(message);
+		if (err):
+			client.close();
+			break;
+                message = remain;
+            until (message = "")
+        endIf
+
+    endWhile
+endDef;
+
+------------------------------------------------------------------------------------------------------------------------------
+
+Def Client(serverIP,serverPort,vlcPort):
+    buff = "";
+
+    master = socket.TCP();
+    master.bind(localhost,0);
+    sktUDP = socket.UDP()
+
+    client, err = master.connect(serverIP, serverPort);
+    if (err):
+        master.close();
+        break;
+    endIf
+
+    Thread.new(consoleData,vlcPort,client);
+endDef
+
+Def consoleData(vlcPort,client):
+    while (true):
+        data = IO.readLn();
+        if (data.find("CONECTAR")):
+            clientPort = vlcPort;
+	    buffer = data + vlcPort;
+	    repeat
+           	repeat
+            		remain,err = client.send(buffer)
+            		if (err):
+               	   		client.close();
+				break;
+            		endIf
+            		buffer = remain
+       		until (buffer = "")
+        endif
+
+        if (data.find("DESCONECTAR")):
+	    buffer = data;
+            repeat
+            	remain,err = client.send(buffer)
+            	if (err):
+               	   	client.close();
+			break;
+            	endIf
+            	buffer = remain
+       	    until (buffer = "")
+            sktUDP.close();
+            break;
+        endif
+	if (data.find("INTERRUMPIR")):
+        	repeat
+            		remain,err = client.send(data)
+            		if (err):
+                		client.close();
+				break;
+            		endIf
+            		data = remain
+        	until (data = "")
+	if (data.find("CONTINUAR")):
+        	repeat
+            		remain,err = client.send(data)
+            		if (err):
+                		client.close();
+				break;
+            		endIf
+            		data = remain
+        	until (data = "")    
+        if (data.find("CONECTAR") || data.find("INTERRUMPIR") || data.find("CONTINUAR")):
+            repeat
+                data, err = client.receive();
+                buff += data;
+            until (data = "")
+            if (!data.find("OK"))
+		client.close();
+		break;
+            endIf
+        endif
+    endWhile

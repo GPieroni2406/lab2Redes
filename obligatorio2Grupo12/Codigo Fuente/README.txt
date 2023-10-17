@@ -1,0 +1,1 @@
+Las instrucciones para ejecutar el sistema se pueden encontrar en el documento Obligatorio2Grupo12.pdf, en la seccion 2. Instrucciones de Ejecución
