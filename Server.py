@@ -76,14 +76,14 @@ def clientConection(client):
             clientPort = int(numero)
             print(f'El puerto elegido es {numero}')
             with clientsListLock: #Para mutuoexcluir la lista
-                if not any([c for c in clientsList if c[0] == clientIp]):
+                if not any([c for c in clientsList if (c[0] == clientIp and c[1] == clientPort)]):
                     clientsList.append((clientIp, clientPort, True))
                     print(f'La lista actual de conectados es {clientsList}')
 
         if "DESCONECTAR"==data:
             print(f'Desconectando cliente')
             with clientsListLock: #Para mutuoexcluir la lista
-                clientsList[:] = [c for c in clientsList if c[0] != clientIp]
+                clientsList[:] = [c for c in clientsList if (c[0] != clientIp and c[1] != clientPort)]
             
             message = "OK"
             while message:
@@ -97,7 +97,7 @@ def clientConection(client):
             print(f'Interrumpiendo conexion del cliente')
             with clientsListLock: #Para mutuoexcluir la lista
                 for index, (ip, port, ready) in enumerate(clientsList):
-                    if ip == clientIp:
+                    if (ip == clientIp and port == clientPort):
                         clientsList[index] = (ip, port, False)
                         print(f'Cliente {clientIp} Interrumpido')
 
@@ -105,7 +105,7 @@ def clientConection(client):
             print(f'Reanudando conexion del cliente')
             with clientsListLock: #Para mutuoexcluir la lista
                 for index, (ip, port, ready) in enumerate(clientsList):
-                    if ip == clientIp:
+                    if (ip == clientIp and port == clientPort):
                         clientsList[index] = (ip, port, True)
 
         if any(word in data for word in ["CONTINUAR","INTERRUMPIR", "CONECTAR"]):
