@@ -64,7 +64,7 @@ def clientConection(client):
         data = ""
         while ("\n" not in data):
             try:
-                buffer = client.recv().decode("utf-8")
+                buffer = client.recv(0).decode("utf-8")
                 data += buffer
             except socket.error as e:
                 client.close()

@@ -68,12 +68,13 @@ def consoleData(vlcPort,master):
                 
             if buff == "CONTINUAR" or buff=="CONECTAR" or buff=="DESCONECTAR" or buff=="INTERRUMPIR":
                 message = ""
-                try:
-                    data = master.recv().decode()
-                    message += data
-                except socket.error as e:
-                    master.close()
-                    return
+                while ("\n" not in message):
+                    try:
+                        data = master.recv(0).decode()
+                        message += data
+                    except socket.error as e:
+                        master.close()
+                        return
                 print(f'Se recibe {message}')
                 if "OK" not in message:
                     break
