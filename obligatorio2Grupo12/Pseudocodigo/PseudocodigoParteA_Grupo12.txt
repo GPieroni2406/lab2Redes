@@ -54,7 +54,7 @@ Def clientConection(client,clientList):
                 client.close();
 		break;
             data += buffer;
-	    pos = String.pos(buffer, ‘/n’)
+	    pos = String.pos(data, ‘/n’)
         until (pos > 0) // Si la posicion es 0 significa que aun no llego todo el mensaje.
 
         if (data.find("CONECTAR")):
@@ -188,7 +188,7 @@ Def consoleData(vlcPort,client):
 			client.close();
 			break;
                 data += buff;
-	    	pos = String.pos(buff,"\n") 
+	    	pos = String.pos(data,"\n") 
             until (pos > 0) // Si la posicion es 0 significa que aun no llego todo el mensaje.
             if (!data.find("OK"))
 		client.close();
