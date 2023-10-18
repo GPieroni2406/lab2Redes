@@ -23,7 +23,8 @@ def consoleData(vlcPort,master):
             data = input()+"\n"
             buff = data
             if "CONECTAR\n"== data:
-                data = data + str(vlcPort)
+                data = data.strip("\n")
+                data = data + vlcPort + "\n"
                 while data:
                     try:
                         sent = master.send(data.encode())
