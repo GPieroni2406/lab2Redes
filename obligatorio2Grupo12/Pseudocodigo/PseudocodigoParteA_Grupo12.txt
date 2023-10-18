@@ -183,11 +183,16 @@ Def consoleData(vlcPort,client):
         if (data.find("CONECTAR") || data.find("INTERRUMPIR") || data.find("CONTINUAR")):
             repeat
                 data, err = client.receive();
+		if (err)
+			client.close();
+			break;
                 buff += data;
-            until (data = "")
+	    	pos = String.pos(buff,"\n") 
+            until (pos > 0) // Si la posicion es 0 significa que aun no llego todo el mensaje.
             if (!data.find("OK"))
 		client.close();
 		break;
             endIf
         endif
     endWhile
+endDef
