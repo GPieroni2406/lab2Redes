@@ -24,7 +24,7 @@ def consoleData(vlcPort,master):
             buff = data
             if "CONECTAR\n"== data:
                 data = data.strip("\n")
-                data = data + vlcPort + "\n"
+                data = data + str(vlcPort) + "\n"
                 while data:
                     try:
                         sent = master.send(data.encode())
@@ -76,6 +76,7 @@ def consoleData(vlcPort,master):
                     except socket.error as e:
                         master.close()
                         return
+                message = message.strip("\n")
                 print(f'Se recibe {message}')
                 if "OK" not in message:
                     break

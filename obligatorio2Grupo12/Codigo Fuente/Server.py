@@ -42,7 +42,7 @@ def addConections():
 def sendData():
     while(True):
         try:
-            datagram, (ip, port) = sktUDP.recvfrom(65507) #TAMANO MAXIMO = 65535 -20 -8 = 65507
+            datagram, (ip, port) = sktUDP.recvfrom(65507) #TAMANO MAXIMO = 65535 -20 de IP  -8 de UDP = 65507
             with clientsListLock: #Para mutuoexcluir la lista
                 for c in clientsList:
                     if c[2]==True:
@@ -63,13 +63,13 @@ def clientConection(client):
         data= ""
         while ("\n" not in data):
             try:
-                buffer = client.recv(4096).decode("utf-8")
+                buffer = client.recv(1024).decode("utf-8")
                 data += buffer
             except socket.error as e:
                 client.close()
                 return
         data = data.strip("\n")
-        if "CONECTAR" == data:
+        if ("CONECTAR" in data and "DESCONECTAR" not in data):
             print(f'Agregando cliente a los conectados')
             patron = r'\d+'
             resultado = re.search(patron, data)
@@ -81,6 +81,7 @@ def clientConection(client):
                 if not any([c for c in clientsList if (c[0] == clientIp and c[1] == clientPort)]):
                     clientsList.append((clientIp, clientPort, True))
                     print(f'La lista actual de conectados es {clientsList}')
+            data = data.strip(str(clientPort))
 
         if "DESCONECTAR"==data:
             print(f'Desconectando cliente')
@@ -99,7 +100,6 @@ def clientConection(client):
             break
 
         if "INTERRUMPIR"==data:
-            print(f'Interrumpiendo conexion del cliente')
             with clientsListLock: #Para mutuoexcluir la lista
                 for index, (ip, port, ready) in enumerate(clientsList):
                     if (ip == clientIp and port == clientPort):
@@ -107,9 +107,9 @@ def clientConection(client):
                         print(f'Cliente {clientIp} Interrumpido')
 
         if "CONTINUAR"==data:
-            print(f'Reanudando conexion del cliente')
             with clientsListLock: #Para mutuoexcluir la lista
                 for index, (ip, port, ready) in enumerate(clientsList):
+                    print(f'Reanudando conexion del cliente')
                     if (ip == clientIp and port == clientPort):
                         clientsList[index] = (ip, port, True)
 
